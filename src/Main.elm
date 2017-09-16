@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput, onClick)
+import Html.Events exposing (onInput, onClick, onSubmit)
 
 
 ---- MODEL ----
@@ -80,21 +80,34 @@ view model =
         [ div [classList
                 [("row", True)]
         ] [
-             div []
-                  [ input [ type_ "text", value model.participantsForm.name, placeholder "Name", onInput FormNameChange ] []
-                  , input [ type_ "number", value (toString model.participantsForm.numberOfTickets), placeholder "# tickets", onInput FormNumberOfTicketsChange ] []
-                  , input [ type_ "submit",  onClick AddParticipant ] []
+            div [classList
+                   [("col-md-5", True)]
+            ] [
+                 div [classList
+                        [("row", True)]
+                 ] [ Html.form [ onSubmit AddParticipant]
+                        [ div [classList
+                            [("form-group", True), ("col-md-6", True)]
+                        ] [ input [ type_ "text", value model.participantsForm.name, placeholder "Name", onInput FormNameChange, classList [("form-control", True)] ] [] ]
+                        , div [classList
+                                [("form-group", True), ("col-md-4", True)]
+                        ] [ input [ type_ "number", value (toString model.participantsForm.numberOfTickets), placeholder "# tickets", onInput FormNumberOfTicketsChange, classList [("form-control", True)] ] []]
+                        , div [classList
+                                [("col-md-2", True)]
+                        ] [ input [ type_ "submit",  value "+", classList [("btn", True), ("btn-primary", True)] ] []]
+                      ]
                   ]
-            , div [] [ table [] [
-                            thead [] [
-                                tr [] [
-                                    td [] [text "Name"]
-                                    , td [] [text "# tickets"]
+                , div [] [ table [ classList [("table", True)] ] [
+                                thead [] [
+                                    tr [] [
+                                        td [] [text "Name"]
+                                        , td [] [text "# tickets"]
+                                    ]
                                 ]
+                                , tbody [] (List.map viewParticipants model.participants)
                             ]
-                            , tbody [] (List.map viewParticipants model.participants)
-                        ]
-                     ]
+                 ]
+             ]
         ]
     ]
 
