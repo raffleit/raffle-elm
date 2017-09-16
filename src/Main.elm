@@ -67,19 +67,29 @@ update msg model =
 
 viewParticipants : Participant -> Html Msg
 viewParticipants participant =
-    li [] [ text (participant.name ++ " " ++ toString participant.numberOfTickets) ]
+    tr []
+        [ td [] [text participant.name]
+        , td [] [text (toString participant.numberOfTickets) ]
+        ]
 
 view : Model -> Html Msg
 view model =
     div []
-        [ img [ src "/logo.svg" ] []
-        , div [] [ text "Your Elm App is working!" ]
-        , div [] [ ul [] (List.map viewParticipants model.participants) ]
-        , div []
+        [ div []
               [ input [ type_ "text", value model.participantsForm.name, placeholder "Name", onInput FormNameChange ] []
               , input [ type_ "number", value (toString model.participantsForm.numberOfTickets), placeholder "# tickets", onInput FormNumberOfTicketsChange ] []
               , input [ type_ "submit",  onClick AddParticipant ] []
               ]
+        , div [] [ table [] [
+                        thead [] [
+                            tr [] [
+                                td [] [text "Name"]
+                                , td [] [text "# tickets"]
+                            ]
+                        ]
+                        , tbody [] (List.map viewParticipants model.participants)
+                    ]
+                 ]
         ]
 
 
