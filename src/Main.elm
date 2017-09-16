@@ -74,23 +74,29 @@ viewParticipants participant =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ div []
-              [ input [ type_ "text", value model.participantsForm.name, placeholder "Name", onInput FormNameChange ] []
-              , input [ type_ "number", value (toString model.participantsForm.numberOfTickets), placeholder "# tickets", onInput FormNumberOfTicketsChange ] []
-              , input [ type_ "submit",  onClick AddParticipant ] []
-              ]
-        , div [] [ table [] [
-                        thead [] [
-                            tr [] [
-                                td [] [text "Name"]
-                                , td [] [text "# tickets"]
-                            ]
-                        ]
-                        , tbody [] (List.map viewParticipants model.participants)
-                    ]
-                 ]
+    div [classList
+            [("container", True)]
         ]
+        [ div [classList
+                [("row", True)]
+        ] [
+             div []
+                  [ input [ type_ "text", value model.participantsForm.name, placeholder "Name", onInput FormNameChange ] []
+                  , input [ type_ "number", value (toString model.participantsForm.numberOfTickets), placeholder "# tickets", onInput FormNumberOfTicketsChange ] []
+                  , input [ type_ "submit",  onClick AddParticipant ] []
+                  ]
+            , div [] [ table [] [
+                            thead [] [
+                                tr [] [
+                                    td [] [text "Name"]
+                                    , td [] [text "# tickets"]
+                                ]
+                            ]
+                            , tbody [] (List.map viewParticipants model.participants)
+                        ]
+                     ]
+        ]
+    ]
 
 
 
