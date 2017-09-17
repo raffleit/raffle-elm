@@ -13,10 +13,16 @@ type alias Participant =
         numberOfTickets: Int
     }
 
+type alias ParticipantsForm =
+    {
+        name: Maybe String,
+        numberOfTickets: Maybe String
+    }
+
 type alias Model =
     {
         participants: List (Participant),
-        participantsForm: Participant
+        participantsForm: ParticipantsForm
     }
 
 
@@ -25,7 +31,7 @@ init =
     (
     {
         participants = [{name="hei", numberOfTickets=12}],
-        participantsForm = {name = "", numberOfTickets = 0}}
+        participantsForm = {name = Nothing, numberOfTickets = Nothing}}
     , Cmd.none
     )
 
@@ -38,27 +44,27 @@ type Msg
     FormNameChange String |
     FormNumberOfTicketsChange String
 
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         AddParticipant ->
-            { model | participants = model.participantsForm :: model.participants, participantsForm = {name= "", numberOfTickets = 0} } ! [ Cmd.none ]
+            { model | participants = {name = Maybe.withDefault "" model.participantsForm.name,
+                            numberOfTickets = (String.toInt (Maybe.withDefault "0" model.participantsForm.numberOfTickets)) |> Result.toMaybe |> Maybe.withDefault 0} :: model.participants,
+                        participantsForm = {name= Nothing, numberOfTickets = Nothing} } ! [ Cmd.none ]
 
         FormNameChange name ->
             let
                 oldParticipantsForm = model.participantsForm
                 newParticipantsForm =
-                    { oldParticipantsForm | name = name }
+                    { oldParticipantsForm | name = Just name }
             in
                 {model | participantsForm = newParticipantsForm} ! [ Cmd.none ]
 
         FormNumberOfTicketsChange numberOfTickets ->
             let
                 oldParticipantsForm = model.participantsForm
-                newNumberOfTickets = Result.withDefault 0 (String.toInt numberOfTickets)
                 newParticipantsForm =
-                    { oldParticipantsForm | numberOfTickets = newNumberOfTickets }
+                    { oldParticipantsForm | numberOfTickets = Just numberOfTickets}
             in
                 {model | participantsForm = newParticipantsForm} ! [ Cmd.none ]
 
@@ -88,10 +94,10 @@ view model =
                  ] [ Html.form [ onSubmit AddParticipant]
                         [ div [classList
                             [("form-group", True), ("col-md-6", True)]
-                        ] [ input [ type_ "text", value model.participantsForm.name, placeholder "Name", onInput FormNameChange, classList [("form-control", True)] ] [] ]
+                        ] [ input [ type_ "text", value (Maybe.withDefault "" model.participantsForm.name) , placeholder "Name", onInput FormNameChange, classList [("form-control", True)] ] [] ]
                         , div [classList
                                 [("form-group", True), ("col-md-4", True)]
-                        ] [ input [ type_ "number", value (toString model.participantsForm.numberOfTickets), placeholder "# tickets", onInput FormNumberOfTicketsChange, classList [("form-control", True)] ] []]
+                        ] [ input [ type_ "number", value (Maybe.withDefault "" model.participantsForm.numberOfTickets), placeholder "# tickets", onInput FormNumberOfTicketsChange, classList [("form-control", True)] ] []]
                         , div [classList
                                 [("col-md-2", True)]
                         ] [ input [ type_ "submit",  value "+", classList [("btn", True), ("btn-primary", True)] ] []]
