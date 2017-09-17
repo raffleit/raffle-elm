@@ -114,7 +114,11 @@ viewParticipant participant =
 
 listParticipants: List (Participant) -> Html Msg
 listParticipants participants =
-    div [] [ table [ classList [("table", True)] ] [
+    if List.isEmpty participants then
+        div [] []
+    else
+        div [] [
+            table [ classList [("table", True)] ] [
                 thead [] [
                     tr [] [
                         td [] [text "Name"]
@@ -124,7 +128,7 @@ listParticipants participants =
                 ]
                 , tbody [] (List.map viewParticipant participants)
             ]
-                     ]
+        ]
 
 viewParticipantForm: ParticipantsForm -> Html Msg
 viewParticipantForm form =
@@ -158,7 +162,7 @@ view : Model -> Html Msg
 view model =
     div [classList [("container", True)]]
         [   (nav model)
-            , div [classList [("row", True)]]
+            , div [classList [("row", True)], style [("margin-top", "2em")]]
             [
                 content model
             ]
