@@ -4,7 +4,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onClick, onSubmit)
 import List exposing (filter)
-import Random exposing (int, generate)
+import Random exposing (int, generate, Seed, initialSeed)
 import Navigation
 
 ---- MODEL ----
@@ -15,6 +15,11 @@ type alias Participant =
         id: Int,
         name: String,
         numberOfTickets: Int
+    }
+
+type alias Winner =
+    {
+        name: String
     }
 
 type alias ParticipantsForm =
@@ -40,16 +45,20 @@ getPage hash =
 type alias Model =
     {
         participants: List (Participant),
+        winners: List (Winner),
         participantsForm: ParticipantsForm,
-        page : Page
+        page : Page,
+        seed : Seed
     }
 
 
 init : Navigation.Location -> ( Model, Cmd Msg )
 init = (\_ ->
     ({
+        seed = initialSeed 45634,
         page = Participants,
         participants = [],
+        winners = [],
         participantsForm = {name = Nothing, numberOfTickets = Nothing}}
     , Cmd.none))
 
@@ -63,7 +72,8 @@ type Msg
     FormNameChange String |
     FormNumberOfTicketsChange String |
     DeleteParticipant Int |
-    UrlChange Navigation.Location
+    UrlChange Navigation.Location |
+    Draw
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -101,6 +111,16 @@ update msg model =
         UrlChange location ->
                     { model | page = (getPage location.hash) } ! [ Cmd.none ]
 
+        Draw ->
+            let
+                flattenedParticipants = List.concatMap (\p -> List.repeat p.numberOfTickets p) model.participants
+                gen = Random.int 0 (List.length flattenedParticipants - 1)
+                (rnd, seed) = Random.generate gen model.seed
+                elem = List.drop rnd flattenedParticipants |> List.head
+                winnerParticipant = Maybe.withDefault {id = 0, name = "Error", numberOfTickets = 0} elem
+                winner = {name = winnerParticipant.name}
+            in
+                { model | winners = winner :: model.winners, seed = seed } ! [ Cmd.none ]
 
 ---- VIEW ----
 
@@ -179,7 +199,11 @@ content model =
             ]
 
         Drawing ->
-            h1 [] [ text "Drawing!" ]
+            div [classList [("col-md-7", True)]
+            ] [
+                button [classList [("btn", True), ("btn-success", True), ("btn-lg", True)], onClick Draw]
+                    [text "Draw"]
+            ]
 
 ---- PROGRAM ----
 

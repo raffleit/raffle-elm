@@ -1,0 +1,15 @@
+image: beevelop/nodejs-python:latest
+
+pipelines:
+  default:
+    - step:
+        caches:
+          - node
+        script:
+          - npm install
+          - npm test
+          - npm run build
+        #  - pip install boto3==1.3.0
+        #  - python aws/cfn_stack_update.py Raffle2Stack aws/stack.yaml
+        #  - python aws/s3-empty-bucket.py raffle.abbsnabb.com
+        #  - python aws/s3-upload-dir.py raffle.abbsnabb.com build true irrelevant
