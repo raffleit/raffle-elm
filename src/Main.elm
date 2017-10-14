@@ -115,12 +115,12 @@ update msg model =
             let
                 flattenedParticipants = List.concatMap (\p -> List.repeat p.numberOfTickets p) model.participants
                 gen = Random.int 0 (List.length flattenedParticipants - 1)
-                (rnd, seed) = Random.generate gen model.seed
-                elem = List.drop rnd flattenedParticipants |> List.head
+--                (rnd, seed) = Random.generate gen model.seed
+                elem = List.drop 1 flattenedParticipants |> List.head
                 winnerParticipant = Maybe.withDefault {id = 0, name = "Error", numberOfTickets = 0} elem
                 winner = {name = winnerParticipant.name}
             in
-                { model | winners = winner :: model.winners, seed = seed } ! [ Cmd.none ]
+                { model | winners = winner :: model.winners} ! [ Cmd.none ]
 
 ---- VIEW ----
 
