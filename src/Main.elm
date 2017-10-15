@@ -68,7 +68,6 @@ init = (\_ ->
 
 type Msg
     = AddParticipant |
-    AddParticipantWithId Int|
     FormNameChange String |
     FormNumberOfTicketsChange String |
     DeleteParticipant Int |
@@ -79,15 +78,13 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         AddParticipant ->
-            (model, generate AddParticipantWithId (int 1000000 999999999))
-
-        AddParticipantWithId id ->
             let
+                (id, seed) = Random.step (int 1000000 999999999) model.seed
                 name = Maybe.withDefault "" model.participantsForm.name
                 numberOfTickets = (String.toInt (Maybe.withDefault "0" model.participantsForm.numberOfTickets)) |> Result.toMaybe |> Maybe.withDefault 0
             in
                 { model | participants = { id = id, name = name, numberOfTickets = numberOfTickets} :: model.participants,
-                        participantsForm = {name= Nothing, numberOfTickets = Nothing} } ! [ Cmd.none ]
+                        participantsForm = {name= Nothing, numberOfTickets = Nothing}, seed = seed } ! [ Cmd.none ]
 
         FormNameChange name ->
             let
@@ -115,12 +112,13 @@ update msg model =
             let
                 flattenedParticipants = List.concatMap (\p -> List.repeat p.numberOfTickets p) model.participants
                 gen = Random.int 0 (List.length flattenedParticipants - 1)
---                (rnd, seed) = Random.generate gen model.seed
-                elem = List.drop 1 flattenedParticipants |> List.head
+                max = (List.length flattenedParticipants - 1)
+                (rnd, seed) = Random.step (int 0 max) model.seed
+                elem = List.drop rnd flattenedParticipants |> List.head
                 winnerParticipant = Maybe.withDefault {id = 0, name = "Error", numberOfTickets = 0} elem
                 winner = {name = winnerParticipant.name}
             in
-                { model | winners = winner :: model.winners} ! [ Cmd.none ]
+                { model | winners = winner :: model.winners, seed = seed} ! [ Cmd.none ]
 
 ---- VIEW ----
 
@@ -166,6 +164,18 @@ viewParticipantForm form =
           ]
       ]
 
+viewWinner : Winner -> Html Msg
+viewWinner winner =
+    li []
+        [ text winner.name ]
+
+listWinners: List (Winner) -> Html Msg
+listWinners winners =
+    if List.isEmpty winners then
+        div [] []
+    else
+        ul [ classList [("list-unstyled", True)] ] (List.map viewWinner winners)
+
 nav: Model -> Html Msg
 nav model =
     ul [classList [("nav", True), ("nav-pills", True)]]
@@ -203,6 +213,8 @@ content model =
             ] [
                 button [classList [("btn", True), ("btn-success", True), ("btn-lg", True)], onClick Draw]
                     [text "Draw"]
+
+                , (listWinners model.winners)
             ]
 
 ---- PROGRAM ----
