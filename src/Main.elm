@@ -117,8 +117,9 @@ update msg model =
                 elem = List.drop rnd flattenedParticipants |> List.head
                 winnerParticipant = Maybe.withDefault {id = 0, name = "Error", numberOfTickets = 0} elem
                 winner = {name = winnerParticipant.name}
+                newParticipants = List.map (\a -> if a.id == winnerParticipant.id then {a | numberOfTickets = a.numberOfTickets - 1} else a ) model.participants
             in
-                { model | winners = winner :: model.winners, seed = seed} ! [ Cmd.none ]
+                { model | winners = winner :: model.winners, participants = newParticipants, seed = seed} ! [ Cmd.none ]
 
 ---- VIEW ----
 
