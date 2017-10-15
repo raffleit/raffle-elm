@@ -166,7 +166,7 @@ viewParticipantForm form =
 
 viewWinner : Winner -> Html Msg
 viewWinner winner =
-    li []
+    li [style [("font-size", "3em")]]
         [ text winner.name ]
 
 listWinners: List (Winner) -> Html Msg
