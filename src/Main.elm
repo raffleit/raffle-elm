@@ -53,6 +53,12 @@ type alias Model =
         seed : Seed
     }
 
+defaultForm = {
+      name = Nothing,
+      nameError = False,
+      numberOfTickets = Nothing,
+      numberOfTicketsError = False
+    }
 
 init : Navigation.Location -> ( Model, Cmd Msg )
 init = (\_ ->
@@ -61,12 +67,7 @@ init = (\_ ->
         page = Participants,
         participants = [],
         winners = [],
-        participantsForm = {
-            name = Nothing,
-            nameError = False,
-            numberOfTickets = Nothing,
-            numberOfTicketsError = False
-        }
+        participantsForm = defaultForm
     }, Cmd.none))
 
 
@@ -107,10 +108,10 @@ update msg model =
                             (id, seed) = Random.step (int 1000000 999999999) model.seed
                             name = Maybe.withDefault "" model.participantsForm.name
                             numberOfTickets = (String.toInt (Maybe.withDefault "0" model.participantsForm.numberOfTickets)) |> Result.toMaybe |> Maybe.withDefault 0
-                            newParticipants = { id = id, name = name, numberOfTickets = numberOfTickets} :: model.participants
-                            newParticipantsForm = {name= Nothing, nameError=False, numberOfTickets = Nothing, numberOfTicketsError = False}
+                            newParticipant = { id = id, name = name, numberOfTickets = numberOfTickets}
+                            newParticipants =  newParticipant :: model.participants
                         in
-                            (newParticipants, newParticipantsForm, seed)
+                            (newParticipants, defaultForm, seed)
 
             in
                 { model | participants = participants,
