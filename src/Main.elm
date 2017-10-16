@@ -88,10 +88,10 @@ update msg model =
         AddParticipant ->
             let
                 oldParticipantsForm = model.participantsForm
-                nameError = case model.participantsForm.name of
+                nameError = case oldParticipantsForm.name of
                     Just name -> String.isEmpty name
                     Nothing -> True
-                numberOfTicketsError = case model.participantsForm.numberOfTickets of
+                numberOfTicketsError = case oldParticipantsForm.numberOfTickets of
                     Just number -> String.isEmpty number
                     Nothing -> True
 
@@ -106,8 +106,9 @@ update msg model =
                     False ->
                         let
                             (id, seed) = Random.step (int 1000000 999999999) model.seed
-                            name = Maybe.withDefault "" model.participantsForm.name
-                            numberOfTickets = (String.toInt (Maybe.withDefault "0" model.participantsForm.numberOfTickets)) |> Result.toMaybe |> Maybe.withDefault 0
+                            name = Maybe.withDefault "" oldParticipantsForm.name
+                            numberOfTicketsMaybe = (String.toInt (Maybe.withDefault "0" oldParticipantsForm.numberOfTickets))
+                            numberOfTickets = numberOfTicketsMaybe |> Result.toMaybe |> Maybe.withDefault 0
                             newParticipant = { id = id, name = name, numberOfTickets = numberOfTickets}
                             newParticipants =  newParticipant :: model.participants
                         in
@@ -148,11 +149,14 @@ update msg model =
                 (rnd, seed) = Random.step (int 0 max) model.seed
                 winnerParticipant = List.drop rnd flattenedParticipants |> List.head
                 winners = case winnerParticipant of
-                  Just winner -> {name = winner.name} :: model.winners
-                  Nothing -> model.winners
+                    Just winner -> {name = winner.name} :: model.winners
+                    Nothing -> model.winners
                 newParticipants = case winnerParticipant of
-                  Just participant -> List.map (\a -> if a.id == participant.id then {a | numberOfTickets = a.numberOfTickets - 1} else a ) model.participants
-                  Nothing -> model.participants
+                    Just participant ->
+                        List.map (\a -> if a.id == participant.id then
+                                    {a | numberOfTickets = a.numberOfTickets - 1}
+                                    else a ) model.participants
+                    Nothing -> model.participants
             in
                 { model | winners = winners, participants = newParticipants, seed = seed} ! [ Cmd.none ]
 
@@ -163,7 +167,8 @@ viewParticipant participant =
     tr []
         [ td [] [text participant.name]
         , td [] [text (toString participant.numberOfTickets) ]
-        , td [] [button [classList [("btn", True), ("btn-link", True)], onClick (DeleteParticipant participant.id) ] [ text "Delete"] ]
+        , td [] [button [classList [("btn", True), ("btn-link", True)],
+                        onClick (DeleteParticipant participant.id) ] [ text "Delete"] ]
         ]
 
 listParticipants: List (Participant) -> Html Msg
