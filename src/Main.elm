@@ -114,12 +114,15 @@ update msg model =
                 gen = Random.int 0 (List.length flattenedParticipants - 1)
                 max = (List.length flattenedParticipants - 1)
                 (rnd, seed) = Random.step (int 0 max) model.seed
-                elem = List.drop rnd flattenedParticipants |> List.head
-                winnerParticipant = Maybe.withDefault {id = 0, name = "Error", numberOfTickets = 0} elem
-                winner = {name = winnerParticipant.name}
-                newParticipants = List.map (\a -> if a.id == winnerParticipant.id then {a | numberOfTickets = a.numberOfTickets - 1} else a ) model.participants
+                winnerParticipant = List.drop rnd flattenedParticipants |> List.head
+                winners = case winnerParticipant of
+                  Just winner -> {name = winner.name} :: model.winners
+                  Nothing -> model.winners
+                newParticipants = case winnerParticipant of
+                  Just participant -> List.map (\a -> if a.id == participant.id then {a | numberOfTickets = a.numberOfTickets - 1} else a ) model.participants
+                  Nothing -> model.participants
             in
-                { model | winners = winner :: model.winners, participants = newParticipants, seed = seed} ! [ Cmd.none ]
+                { model | winners = winners, participants = newParticipants, seed = seed} ! [ Cmd.none ]
 
 ---- VIEW ----
 
