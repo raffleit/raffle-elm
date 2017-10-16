@@ -54,21 +54,22 @@ type alias Model =
     }
 
 defaultForm = {
-      name = Nothing,
-      nameError = False,
-      numberOfTickets = Nothing,
-      numberOfTicketsError = False
+        name = Nothing,
+        nameError = False,
+        numberOfTickets = Nothing,
+        numberOfTicketsError = False
     }
 
-init : Navigation.Location -> ( Model, Cmd Msg )
-init = (\_ ->
-    ({
+initialModel = {
         seed = initialSeed 45634,
         page = Participants,
         participants = [],
         winners = [],
         participantsForm = defaultForm
-    }, Cmd.none))
+    }
+
+init : Navigation.Location -> ( Model, Cmd Msg )
+init = (\_ -> (initialModel, Cmd.none))
 
 
 
@@ -80,7 +81,8 @@ type Msg
     FormNumberOfTicketsChange String |
     DeleteParticipant Int |
     UrlChange Navigation.Location |
-    Draw
+    Draw |
+    Reset
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -159,6 +161,7 @@ update msg model =
                     Nothing -> model.participants
             in
                 { model | winners = winners, participants = newParticipants, seed = seed} ! [ Cmd.none ]
+        Reset -> initialModel ! [ Cmd.none ]
 
 ---- VIEW ----
 
@@ -244,6 +247,8 @@ view model =
             , div [classList [("row", True)], style [("margin-top", "2em")]]
             [
                 content model
+            ], div [classList [("reset", True)]] [
+                a [ href "#/Participants", onClick Reset ] [text "Reset"]
             ]
         ]
 
