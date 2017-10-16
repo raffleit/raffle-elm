@@ -35,7 +35,7 @@ def update_stack(client, stack_name, template):
             Parameters=[
                 {
                     'ParameterKey': 'DomainName',
-                    'ParameterValue': 'raffleelm.abbsnabb.com'
+                    'ParameterValue': 'elm.raffle.abbsnabb.com'
                 },{
                     'ParameterKey': 'IAMDeployUser',
                     'ParameterValue': 'raffleelmbitbucket'
