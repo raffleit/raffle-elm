@@ -25,7 +25,9 @@ type alias Winner =
 type alias ParticipantsForm =
     {
         name: Maybe String,
-        numberOfTickets: Maybe String
+        nameError: Bool,
+        numberOfTickets: Maybe String,
+        numberOfTicketsError: Bool
     }
 
 type Page = Participants | Drawing
@@ -59,8 +61,13 @@ init = (\_ ->
         page = Participants,
         participants = [],
         winners = [],
-        participantsForm = {name = Nothing, numberOfTickets = Nothing}}
-    , Cmd.none))
+        participantsForm = {
+            name = Nothing,
+            nameError = False,
+            numberOfTickets = Nothing,
+            numberOfTicketsError = False
+        }
+    }, Cmd.none))
 
 
 
@@ -79,12 +86,36 @@ update msg model =
     case msg of
         AddParticipant ->
             let
-                (id, seed) = Random.step (int 1000000 999999999) model.seed
-                name = Maybe.withDefault "" model.participantsForm.name
-                numberOfTickets = (String.toInt (Maybe.withDefault "0" model.participantsForm.numberOfTickets)) |> Result.toMaybe |> Maybe.withDefault 0
+                oldParticipantsForm = model.participantsForm
+                nameError = case model.participantsForm.name of
+                    Just name -> String.isEmpty name
+                    Nothing -> True
+                numberOfTicketsError = case model.participantsForm.numberOfTickets of
+                    Just number -> String.isEmpty number
+                    Nothing -> True
+
+                (participants, participantsForm, seed) = case (nameError || numberOfTicketsError) of
+                    True ->
+                        let
+                            newParticipants = model.participants
+                            newParticipantsForm = { oldParticipantsForm | nameError = nameError,
+                                                    numberOfTicketsError = numberOfTicketsError }
+                        in
+                            (newParticipants, newParticipantsForm, model.seed)
+                    False ->
+                        let
+                            (id, seed) = Random.step (int 1000000 999999999) model.seed
+                            name = Maybe.withDefault "" model.participantsForm.name
+                            numberOfTickets = (String.toInt (Maybe.withDefault "0" model.participantsForm.numberOfTickets)) |> Result.toMaybe |> Maybe.withDefault 0
+                            newParticipants = { id = id, name = name, numberOfTickets = numberOfTickets} :: model.participants
+                            newParticipantsForm = {name= Nothing, nameError=False, numberOfTickets = Nothing, numberOfTicketsError = False}
+                        in
+                            (newParticipants, newParticipantsForm, seed)
+
             in
-                { model | participants = { id = id, name = name, numberOfTickets = numberOfTickets} :: model.participants,
-                        participantsForm = {name= Nothing, numberOfTickets = Nothing}, seed = seed } ! [ Cmd.none ]
+                { model | participants = participants,
+                        participantsForm = participantsForm,
+                        seed = seed } ! [ Cmd.none ]
 
         FormNameChange name ->
             let
@@ -158,10 +189,18 @@ viewParticipantForm form =
         [ Html.form [ onSubmit AddParticipant]
             [ div [classList
                 [("form-group", True), ("col-md-6", True)]
-            ] [ input [ type_ "text", value (Maybe.withDefault "" form.name) , placeholder "Name", onInput FormNameChange, classList [("form-control", True)] ] [] ]
+            ] [ input [ type_ "text",
+                        value (Maybe.withDefault "" form.name),
+                        placeholder "Name",
+                        onInput FormNameChange,
+                        classList [("form-control", True), ("errorInput", form.nameError)] ] [] ]
             , div [classList
                     [("form-group", True), ("col-md-4", True)]
-            ] [ input [ type_ "number", value (Maybe.withDefault "" form.numberOfTickets), placeholder "# tickets", onInput FormNumberOfTicketsChange, classList [("form-control", True)] ] []]
+            ] [ input [ type_ "number",
+                        value (Maybe.withDefault "" form.numberOfTickets),
+                        placeholder "# tickets",
+                        onInput FormNumberOfTicketsChange,
+                        classList [("form-control", True), ("errorInput", form.numberOfTicketsError)] ] []]
             , div [classList
                     [("col-md-2", True)]
             ] [ input [ type_ "submit",  value "+", classList [("btn", True), ("btn-primary", True)] ] []]
