@@ -77,6 +77,8 @@ init = (\_ -> (initialModel, Cmd.none))
 
 type Msg
     = AddParticipant |
+    AddParticipantSuccess |
+    AddParticipantError (Bool, Bool) |
     FormNameChange String |
     FormNumberOfTicketsChange String |
     DeleteParticipant Int |
@@ -97,29 +99,36 @@ update msg model =
                     Just number -> String.isEmpty number
                     Nothing -> True
 
-                (participants, participantsForm, seed) = case (nameError || numberOfTicketsError) of
-                    True ->
-                        let
-                            newParticipants = model.participants
-                            newParticipantsForm = { oldParticipantsForm | nameError = nameError,
-                                                    numberOfTicketsError = numberOfTicketsError }
-                        in
-                            (newParticipants, newParticipantsForm, model.seed)
-                    False ->
-                        let
-                            (id, seed) = Random.step (int 1000000 999999999) model.seed
-                            name = Maybe.withDefault "" oldParticipantsForm.name
-                            numberOfTicketsMaybe = (String.toInt (Maybe.withDefault "0" oldParticipantsForm.numberOfTickets))
-                            numberOfTickets = numberOfTicketsMaybe |> Result.toMaybe |> Maybe.withDefault 0
-                            newParticipant = { id = id, name = name, numberOfTickets = numberOfTickets}
-                            newParticipants =  newParticipant :: model.participants
-                        in
-                            (newParticipants, defaultForm, seed)
-
+                command = case (nameError || numberOfTicketsError) of
+                    True -> AddParticipantError (nameError, numberOfTicketsError)
+                    False -> AddParticipantSuccess
             in
-                { model | participants = participants,
-                        participantsForm = participantsForm,
+                model ! [Cmd.map AddParticipantSuccess]
+
+        AddParticipantSuccess ->
+            let
+                oldParticipantsForm = model.participantsForm
+                (id, seed) = Random.step (int 1000000 999999999) model.seed
+                name = Maybe.withDefault "" oldParticipantsForm.name
+                numberOfTicketsMaybe = (String.toInt (Maybe.withDefault "0" oldParticipantsForm.numberOfTickets))
+                numberOfTickets = numberOfTicketsMaybe |> Result.toMaybe |> Maybe.withDefault 0
+                newParticipant = { id = id, name = name, numberOfTickets = numberOfTickets}
+                newParticipants =  newParticipant :: model.participants
+            in
+                { model | participants = newParticipants,
+                        participantsForm = defaultForm,
                         seed = seed } ! [ Cmd.none ]
+
+        AddParticipantError (nameError, numberOfTicketsError) ->
+            let
+                oldParticipantsForm = model.participantsForm
+                newParticipants = model.participants
+                newParticipantsForm = { oldParticipantsForm | nameError = nameError,
+                                        numberOfTicketsError = numberOfTicketsError }
+            in
+                {model | participants = newParticipants,
+                       participantsForm = defaultForm,
+                       seed = model.seed } ! [ Cmd.none ]
 
         FormNameChange name ->
             let
