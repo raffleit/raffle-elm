@@ -1,9 +1,9 @@
 version: 2
-general:
-  branches:
-    ignore:
-      - gh-pages
 jobs:
+  filters:
+    branches:
+      only:
+        - master
   build:
     docker:
       - image: circleci/node:6.10.3
