@@ -1,6 +1,9 @@
 version: 2
 jobs:
   build:
+    branches:
+      only:
+        - master
     filters:
       branches:
         only:
@@ -19,6 +22,7 @@ jobs:
       - run: git rm -rf .
       - run: rm -rf node_modules/
       - run: mv build/* .
+      - run: git checkout master .circleci
       - run: git config --global user.email "andersems@gmail.com"
       - run: git config --global user.name "Anders Emil Salvesen"
       - run: echo elm.raffleit.abbsnabb.com > CNAME
