@@ -5,12 +5,12 @@ jobs:
       only:
         - master
     docker:
-      - image: circleci/node:8.9.4
+      - image: totallymoney/circleci-elm-compile
     working_directory: ~/repo
 
     steps:
       - checkout
-      - run: sudo npm install -g elm create-elm-app
+      - run: sudo npm install -g create-elm-app
       - run: elm-app install
       - run: elm-app build
       - run: git checkout --orphan gh-pages
