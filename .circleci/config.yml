@@ -4,10 +4,6 @@ jobs:
     branches:
       only:
         - master
-    filters:
-      branches:
-        only:
-          - master
     docker:
       - image: circleci/node:8.9.4
     working_directory: ~/repo
