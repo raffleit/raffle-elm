@@ -16,7 +16,6 @@ jobs:
       - checkout
       - run: sudo npm install -g elm create-elm-app
       - run: elm-app install
-      - run: elm-app test
       - run: elm-app build
       - run: git checkout --orphan gh-pages
       - run: git rm -rf .
