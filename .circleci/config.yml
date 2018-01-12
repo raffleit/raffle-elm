@@ -1,0 +1,31 @@
+version: 2
+jobs:
+  build:
+    branches:
+      only:
+        - master
+    filters:
+      branches:
+        only:
+          - master
+    docker:
+      - image: circleci/node:6.10.3
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+      - run: sudo npm install -g elm create-elm-app
+      - run: elm-app install
+      - run: elm-app test
+      - run: elm-app build
+      - run: git checkout --orphan gh-pages
+      - run: git rm -rf .
+      - run: rm -rf node_modules/
+      - run: mv build/* .
+      - run: git checkout master .circleci
+      - run: git config --global user.email "andersems@gmail.com"
+      - run: git config --global user.name "Anders Emil Salvesen"
+      - run: echo elm.raffleit.abbsnabb.com > CNAME
+      - run: git add .
+      - run: git commit -m "Github pages"
+      - run: git push origin gh-pages --force
