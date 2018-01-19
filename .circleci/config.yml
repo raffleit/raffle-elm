@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - checkout
-      - run: npm install -g create-elm-app
+      - run: sudo npm install -g create-elm-app
       - run: elm-app install
       - run: elm-app build
       - run: git checkout --orphan gh-pages
