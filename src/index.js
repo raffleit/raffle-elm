@@ -1,4 +1,3 @@
-import './main.css';
 import './custom.css';
 import { Main } from './Main.elm';
 import registerServiceWorker from './registerServiceWorker';
