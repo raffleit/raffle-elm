@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - checkout
-      - run: elm-app install
+      - run: elm-app install --yes
       - run: elm-app build
       - run: git checkout --orphan gh-pages
       - run: git rm -rf .
