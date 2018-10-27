@@ -5,7 +5,11 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onClick, onSubmit)
 import List exposing (filter)
 import Random exposing (int, generate, Seed, initialSeed)
-import Navigation
+import Browser.Navigation as Navigation
+import Browser
+import Url
+import Debug exposing (log)
+
 
 ---- MODEL ----
 
@@ -32,15 +36,16 @@ type alias ParticipantsForm =
 
 type Page = Participants | Drawing
 
-getPage : String -> Page
+getPage : (Maybe String) -> Page
 getPage hash =
-    case hash of
-        "#/Participants" ->
+    let
+      loc = Maybe.withDefault "/Participants" hash
+    in
+    case loc of
+        "/Participants" ->
             Participants
-
-        "#/Drawing" ->
+        "/Drawing" ->
             Drawing
-
         _ ->
             Participants
 
@@ -50,7 +55,8 @@ type alias Model =
         winners: List (Winner),
         participantsForm: ParticipantsForm,
         page : Page,
-        seed : Seed
+        seed : Seed,
+        key: Navigation.Key
     }
 
 defaultForm = {
@@ -60,16 +66,19 @@ defaultForm = {
         numberOfTicketsError = False
     }
 
-initialModel = {
+initialModel : Navigation.Key -> Model
+initialModel key = {
         seed = initialSeed 45634,
         page = Participants,
         participants = [],
         winners = [],
-        participantsForm = defaultForm
+        participantsForm = defaultForm,
+        key = key
     }
 
-init : Navigation.Location -> ( Model, Cmd Msg )
-init = (\_ -> (initialModel, Cmd.none))
+init : flags -> Url.Url -> Navigation.Key -> ( Model, Cmd Msg )
+init flags url key =
+  ((initialModel key), Cmd.none)
 
 
 
@@ -80,13 +89,21 @@ type Msg
     FormNameChange String |
     FormNumberOfTicketsChange String |
     DeleteParticipant Int |
-    UrlChange Navigation.Location |
+    UrlChanged Url.Url |
+    LinkClicked Browser.UrlRequest |
     Draw |
     Reset
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        LinkClicked urlRequest ->
+            case urlRequest of
+                Browser.Internal url ->
+                  ( model, Navigation.pushUrl model.key (Url.toString url) )
+
+                Browser.External href ->
+                  ( model, Navigation.load href )
         AddParticipant ->
             let
                 oldParticipantsForm = model.participantsForm
@@ -97,7 +114,7 @@ update msg model =
                     Just number -> String.isEmpty number
                     Nothing -> True
 
-                (participants, participantsForm, seed) = case (nameError || numberOfTicketsError) of
+                (participants, participantsForm, newSeed) = case (nameError || numberOfTicketsError) of
                     True ->
                         let
                             newParticipants = model.participants
@@ -109,17 +126,17 @@ update msg model =
                         let
                             (id, seed) = Random.step (int 1000000 999999999) model.seed
                             name = Maybe.withDefault "" oldParticipantsForm.name
-                            numberOfTicketsMaybe = (String.toInt (Maybe.withDefault "0" oldParticipantsForm.numberOfTickets))
-                            numberOfTickets = numberOfTicketsMaybe |> Result.toMaybe |> Maybe.withDefault 0
+                            numberOfTicketsAsString = (Maybe.withDefault "0" oldParticipantsForm.numberOfTickets)
+                            numberOfTickets = (Maybe.withDefault 0 (String.toInt numberOfTicketsAsString))
                             newParticipant = { id = id, name = name, numberOfTickets = numberOfTickets}
                             newParticipants =  newParticipant :: model.participants
                         in
                             (newParticipants, defaultForm, seed)
 
             in
-                { model | participants = participants,
+                ({ model | participants = participants,
                         participantsForm = participantsForm,
-                        seed = seed } ! [ Cmd.none ]
+                        seed = newSeed }, Cmd.none)
 
         FormNameChange name ->
             let
@@ -127,7 +144,7 @@ update msg model =
                 newParticipantsForm =
                     { oldParticipantsForm | name = Just name }
             in
-                {model | participantsForm = newParticipantsForm} ! [ Cmd.none ]
+                ({model | participantsForm = newParticipantsForm}, Cmd.none)
 
         FormNumberOfTicketsChange numberOfTickets ->
             let
@@ -135,13 +152,13 @@ update msg model =
                 newParticipantsForm =
                     { oldParticipantsForm | numberOfTickets = Just numberOfTickets}
             in
-                {model | participantsForm = newParticipantsForm} ! [ Cmd.none ]
+                ({model | participantsForm = newParticipantsForm}, Cmd.none)
 
         DeleteParticipant id ->
-            {model | participants = filter (\a -> a.id /= id) model.participants } ! [ Cmd.none ]
+            ({model | participants = filter (\a -> a.id /= id) model.participants }, Cmd.none)
 
-        UrlChange location ->
-                    { model | page = (getPage location.hash) } ! [ Cmd.none ]
+        UrlChanged url ->
+                    ({ model | page = (getPage url.fragment) }, Cmd.none)
 
         Draw ->
             let
@@ -160,8 +177,8 @@ update msg model =
                                     else a ) model.participants
                     Nothing -> model.participants
             in
-                { model | winners = winners, participants = newParticipants, seed = seed} ! [ Cmd.none ]
-        Reset -> initialModel ! [ Cmd.none ]
+                ({ model | winners = winners, participants = newParticipants, seed = seed}, Cmd.none)
+        Reset -> ((initialModel model.key) , Cmd.none)
 
 ---- VIEW ----
 
@@ -169,7 +186,7 @@ viewParticipant : Participant -> Html Msg
 viewParticipant participant =
     tr []
         [ td [] [text participant.name]
-        , td [] [text (toString participant.numberOfTickets) ]
+        , td [] [text (String.fromInt participant.numberOfTickets) ]
         , td [] [button [classList [("btn", True), ("btn-link", True)],
                         onClick (DeleteParticipant participant.id) ] [ text "Delete"] ]
         ]
@@ -218,7 +235,7 @@ viewParticipantForm form =
 
 viewWinner : Winner -> Html Msg
 viewWinner winner =
-    li [style [("font-size", "3em")]]
+    li [style "font-size" "3em"]
         [ text winner.name ]
 
 listWinners: List (Winner) -> Html Msg
@@ -240,17 +257,23 @@ nav model =
         ]
     ]
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
-    div [classList [("container", True)]]
-        [   (nav model)
-            , div [classList [("row", True)], style [("margin-top", "2em")]]
-            [
-                content model
-            ], div [classList [("reset", True)]] [
-                a [ href "#/Participants", onClick Reset ] [text "Reset"]
-            ]
-        ]
+    {
+      title = "Raffle Drawing Elm",
+      body = [
+        div [classList [("container", True)]]
+                [   (nav model)
+                    , div [classList [("row", True)], style "margin-top" "2em"]
+                    [
+                        content model
+                    ], div [classList [("reset", True)]] [
+                        a [ href "#/Participants", onClick Reset ] [text "Reset"]
+                    ]
+                ]
+      ]
+    }
+
 
 content : Model -> Html Msg
 content model =
@@ -274,11 +297,13 @@ content model =
 ---- PROGRAM ----
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Navigation.program UrlChange
+    Browser.application
         { init = init
         , view = view
         , update = update
         , subscriptions = always Sub.none
+        , onUrlChange = UrlChanged
+        , onUrlRequest = LinkClicked
         }
